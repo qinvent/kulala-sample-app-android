@@ -36,9 +36,13 @@ android {
 dependencies {
 
     // RxJava
-    implementation 'io.reactivex.rxjava2:rxkotlin:2.4.0'
+//    implementation 'io.reactivex.rxjava2:rxkotlin:2.4.0'
+//    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+//    implementation "com.polidea.rxandroidble3:rxandroidble:1.17.2"
+
+    implementation 'io.reactivex.rxjava2:rxkotlin:2.3.0'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
-    implementation "com.polidea.rxandroidble3:rxandroidble:1.17.2"
+    implementation 'com.polidea.rxandroidble2:rxandroidble:1.12.1'
 
     // Kotlin
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))

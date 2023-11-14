@@ -30,7 +30,7 @@ public class KeyCore3 {
     public void sendOne(String blueCarSig) {
         byte[] data16 = BlueVerfyUtils.getEncryptedData(blueCarSig);
         final byte[] mess = DataReceive.newBlueMessage((byte) 1, (byte) 0x72, data16);
-        BlueAdapter.INSTANCE.sendMessage(mess);   //Send this to the hardware
+//        BlueAdapter.INSTANCE.sendMessage(mess);   //Send this to the hardware
 //        BlueAdapter.INSTANCE.sendMessage(bytesToHexString(mess));   //Send this to the hardware
     }
 
@@ -100,7 +100,7 @@ public class KeyCore3 {
                             Log.i("Encryption link", "Final byte time + 1" + Arrays.toString(mess));
                             Log.i("Encryption link", "Final hextsr time + 1" + bytesToHexString(mess));
                             //Replace this method of sending messages and send the second verification
-                            BlueAdapter.INSTANCE.sendMessage(mess);
+//                            BlueAdapter.INSTANCE.sendMessage(mess);
 //                            BlueAdapter.INSTANCE.sendMessage(bytesToHexString(mess));
                         }
                     } catch (NumberFormatException e) {
@@ -124,7 +124,7 @@ public class KeyCore3 {
                 "0x82 02 01 00 7A"//findcar      car search command
         };
 
-        BlueAdapter.INSTANCE.sendMessage(ConvertHexByte.hexStringToBytes(controlCmdArr[0]));
+//        BlueAdapter.INSTANCE.sendMessage(ConvertHexByte.hexStringToBytes(controlCmdArr[0]));
 //        BlueAdapter.INSTANCE.sendMessage(controlCmdArr[0]);
     }
 }

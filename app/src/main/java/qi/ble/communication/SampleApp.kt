@@ -1,9 +1,9 @@
 package qi.ble.communication
 
 import android.app.Application
-import com.polidea.rxandroidble3.LogConstants
-import com.polidea.rxandroidble3.LogOptions
-import com.polidea.rxandroidble3.RxBleClient
+import com.polidea.rxandroidble2.LogConstants
+import com.polidea.rxandroidble2.LogOptions
+import com.polidea.rxandroidble2.RxBleClient
 
 class SampleApp : Application() {
 

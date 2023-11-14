@@ -2,7 +2,6 @@ package qi.ble.communication
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -19,22 +18,25 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.polidea.rxandroidble3.RxBleClient
-import com.polidea.rxandroidble3.RxBleConnection
-import com.polidea.rxandroidble3.exceptions.BleScanException
-import com.polidea.rxandroidble3.scan.ScanResult
-import com.polidea.rxandroidble3.scan.ScanSettings
-import io.reactivex.rxjava3.core.Observable.empty
-import io.reactivex.rxjava3.disposables.Disposable
+import com.polidea.rxandroidble2.RxBleClient
+import com.polidea.rxandroidble2.RxBleDevice
+import com.polidea.rxandroidble2.exceptions.BleScanException
+import com.polidea.rxandroidble2.scan.ScanFilter
+import com.polidea.rxandroidble2.scan.ScanResult
+import com.polidea.rxandroidble2.scan.ScanSettings
+import io.reactivex.Flowable.empty
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import qi.ble.communication.adapter.ScanResultsAdapter
 import qi.ble.communication.databinding.ActivityMainBinding
 import qi.ble.communication.keycore.BlueAdapter
+import qi.ble.communication.keycore.BlueAdapter.TAG
 import qi.ble.communication.permission.PermissionsHelper
 
 
@@ -42,9 +44,9 @@ class MainActivity : AppCompatActivity() {
     var bluetoothAdapter: BluetoothAdapter? = null
 
     private val rxBleClient = SampleApp.rxBleClient
-    private var scanSubscription: Disposable? = null
+    private var scanDisposable: Disposable? = null
     private var flowDisposable: Disposable? = null
-    private var connectDisposable: Disposable? = null
+    private var rxBleDevice: RxBleDevice? = null
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun requestBluetoothPermission() {
@@ -99,11 +101,7 @@ class MainActivity : AppCompatActivity() {
         bluetoothAdapter = bluetoothManager.adapter
 
         binding.btnScan.setOnClickListener { scan() }
-        // binding.btnConnect.setOnClickListener { connect() }
-        binding.btnSend.setOnClickListener {
-            val bytes = binding.editText.text.toString().toByteArray(Charset.defaultCharset())
-            // bluetoothConnection?.write(bytes)
-        }
+        binding.btnConnect.setOnClickListener { connect() }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestBluetoothPermission()
         }
@@ -146,55 +144,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val resultsAdapter =
-        ScanResultsAdapter { scanResult ->
-            connect(scanResult)
-        }
+    private val resultsAdapter = ScanResultsAdapter()
 
-    private fun connect(scanResult: ScanResult) {
-        val device = rxBleClient.getBleDevice(scanResult.bleDevice.macAddress)
-
-        BlueAdapter.connectBleDevice(device)
-        /*connectDisposable = device.establishConnection(false) // <-- autoConnect flag
-            .subscribe(
-                { rxBleConnection: RxBleConnection ->
-                    Log.d("BLE Device ", rxBleConnection.toString())
-                    getCharacteristicUuid(rxBleConnection)
-
-                }
-            ) { throwable: Throwable? ->
-                Log.d("BLE Device ", throwable.toString())
-            }*/
-
-    }
-
-    private lateinit var characteristicUuid: String
-    private fun getCharacteristicUuid(rxBleConnection: RxBleConnection) {
-        rxBleConnection.discoverServices(300, TimeUnit.SECONDS)
-            .subscribe({ rxBleDeviceServices ->
-                Log.d("BLE Device Services ", rxBleDeviceServices.toString())
-                val services = rxBleDeviceServices.bluetoothGattServices
-                services.forEach { bluetoothGattService ->
-                    // here you can work with service's uuid
-                    val serviceUuid: String = bluetoothGattService.uuid.toString()
-                    Log.d("BLE Device ", "service UUID $serviceUuid")
-                    // or with all characteristics in service
-                    val characteristics = bluetoothGattService.characteristics
-                    for (characteristic: BluetoothGattCharacteristic in characteristics) {
-                        // here you have your characteristic's UUID
-                        characteristicUuid = characteristic.uuid.toString()
-                        Log.d("BLE Device ", "characteristic UUID $characteristicUuid")
-                        rxBleConnection.readCharacteristic(characteristic).subscribe({
-                            val str = it.toString(StandardCharsets.UTF_8)
-                            Log.d("BLE Device ", "characteristic $str")
-                        }) {
-                            Log.d("BLE Device characteristic ", "characteristic error $it")
-                        }
-                    }
-                }
-            }) { throwable ->
-                Log.d("BLE Device Services ", throwable.toString())
-            }
+    private fun connect() {
+        rxBleDevice?.let { BlueAdapter.connectBleDevice(it) }
     }
 
     private fun observerBleStateChange() {
@@ -203,8 +156,8 @@ class MainActivity : AppCompatActivity() {
                 when (state) {
                     RxBleClient.State.READY ->                 // everything should work
                         return@switchMap rxBleClient.scanBleDevices()
-                    RxBleClient.State.BLUETOOTH_NOT_AVAILABLE, RxBleClient.State.LOCATION_PERMISSION_NOT_GRANTED, RxBleClient.State.BLUETOOTH_NOT_ENABLED, RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED -> return@switchMap empty()
-                    else -> return@switchMap empty()
+                    RxBleClient.State.BLUETOOTH_NOT_AVAILABLE, RxBleClient.State.LOCATION_PERMISSION_NOT_GRANTED, RxBleClient.State.BLUETOOTH_NOT_ENABLED, RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED -> return@switchMap io.reactivex.Observable.empty()
+                    else -> return@switchMap io.reactivex.Observable.empty()
 
                 }
             }
@@ -217,47 +170,47 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        dispose()
+        scanDisposable?.dispose()
+    }
+
+    public override fun onPause() {
+        super.onPause()
+        if (isScanning) scanDisposable?.dispose()
     }
 
     private val isScanning: Boolean
-        get() = scanSubscription != null
+        get() = scanDisposable != null
 
 
     private fun scan() {
         Log.d(TAG, "scanning")
-        scanSubscription = rxBleClient.scanBleDevices(
+        rxBleClient.scanBleDevices(
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // change if needed
                 // .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES) // change if needed
                 .build(), // add filters if needed
 
-            // ScanFilter.Builder()
-            //     .setDeviceAddress("20:39:56:F0:CF:54") // change if needed
-            //     .build()
+            ScanFilter.Builder()
+                // .setDeviceAddress("F0:F8:F2:E2:3E:06")// Kulala device address "F0:F8:F2:E2:3E:06"
+                .setDeviceAddress("00:07:80:C5:BB:47") // KC1 device address "00:07:80:C5:BB:47"
+                .build()
         )
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { scanResult: ScanResult ->
                     resultsAdapter.addScanResult(scanResult)
+                    rxBleDevice = scanResult.bleDevice
+                    Log.d(TAG, scanResult.toString())
+                    if(isScanning) scanDisposable?.dispose()
                 }
             ) { throwable: Throwable ->
                 onScanFailure(throwable)
-            }
-    }
-
-    private fun dispose() {
-        scanSubscription?.dispose()
-        flowDisposable?.dispose()
-        connectDisposable?.dispose()
-        resultsAdapter.clearScanResults()
+            }.let { scanDisposable = it }
     }
 
     private fun onScanFailure(throwable: Throwable) {
-        if (throwable is BleScanException) Log.e("ScanActivity", "Scan failed", throwable)
-        else Log.w("ScanActivity", "Scan failed", throwable)
-    }
-
-    companion object {
-        private const val TAG = "BLE Comm"
+        if (throwable is BleScanException) Log.e(TAG, "Scan failed", throwable)
+        else Log.w(TAG, "Scan failed", throwable)
+        scanDisposable?.dispose()
     }
 }

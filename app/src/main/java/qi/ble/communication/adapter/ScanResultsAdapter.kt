@@ -5,11 +5,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.polidea.rxandroidble3.scan.ScanResult
+import com.polidea.rxandroidble2.scan.ScanResult
 
-internal class ScanResultsAdapter(
-    private val onClickListener: (ScanResult) -> Unit
-) : RecyclerView.Adapter<ScanResultsAdapter.ViewHolder>() {
+internal class ScanResultsAdapter : RecyclerView.Adapter<ScanResultsAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val device: TextView = itemView.findViewById(android.R.id.text1)
@@ -37,18 +35,13 @@ internal class ScanResultsAdapter(
             }
     }
 
-    fun clearScanResults() {
-        data.clear()
-        notifyDataSetChanged()
-    }
-
     override fun getItemCount(): Int = data.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         with(data[position]) {
-            holder.device.text = String.format("%s (%s) %s", bleDevice.macAddress, scanRecord.deviceName, isConnectable)
+            holder.device.text =
+                String.format("%s (%s)", bleDevice.macAddress, scanRecord.deviceName)
             holder.rssi.text = String.format("RSSI: %d", rssi)
-            holder.itemView.setOnClickListener { onClickListener(this) }
         }
     }
 
