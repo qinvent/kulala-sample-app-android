@@ -13,80 +13,98 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnEnableBluetooth"
+        style="@style/Widget.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorBlack"
         android:onClick="enableBluetooth"
-        android:text="Enable Bluetooth"
-        android:textAllCaps="false"
+        android:text="@string/enableBluetooth"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnScan"
+        android:id="@+id/btnConnect"
+        style="@style/Widget.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Scan"
-        android:textAllCaps="false"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="connectToVehicle"
+        android:text="@string/connectToVehicle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnEnableBluetooth" />
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/tvScannedDevices"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Scanned Devices : "
-        android:textSize="18sp"
-        android:textStyle="bold|italic"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnScan" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/scanResults"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="vertical"
-        android:layout_marginTop="16dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvScannedDevices" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnConnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Connect"
-        android:textAllCaps="false"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/scanResults" />
-
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/editText"
+    <Button
+        android:id="@+id/btnUnlockDoors"
+        style="@style/Widget.Button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:hint="Enter message here"
-        app:layout_constraintEnd_toStartOf="@id/btnSend"
+        android:layout_marginTop="@dimen/spacing4"
+        android:layout_marginEnd="@dimen/spacing4"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="unlockDoors"
+        android:text="@string/unlockDoors"
+        app:layout_constraintEnd_toStartOf="@+id/btnLockDoors"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnConnect" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnSend"
+    <Button
+        android:id="@+id/btnLockDoors"
+        style="@style/Widget.Button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="lockDoors"
+        android:text="@string/lockDoors"
+        app:layout_constraintEnd_toEndOf="@id/btnStopEngine"
+        app:layout_constraintStart_toEndOf="@id/btnUnlockDoors"
+        app:layout_constraintTop_toTopOf="@+id/btnUnlockDoors" />
+
+    <Button
+        android:id="@+id/btnStartEngine"
+        style="@style/Widget.Button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing4"
+        android:layout_marginEnd="@dimen/spacing4"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="startEngine"
+        android:text="@string/startEngine"
+        app:layout_constraintEnd_toEndOf="@id/btnUnlockDoors"
+        app:layout_constraintEnd_toStartOf="@+id/btnStopEngine"
+        app:layout_constraintStart_toStartOf="@id/btnUnlockDoors"
+        app:layout_constraintTop_toBottomOf="@id/btnUnlockDoors" />
+
+    <Button
+        android:id="@+id/btnStopEngine"
+        style="@style/Widget.Button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing4"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="stopEngine"
+        android:text="@string/stopEngine"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnStartEngine"
+        app:layout_constraintTop_toBottomOf="@id/btnLockDoors" />
+
+    <Button
+        android:id="@+id/btnDisconnect"
+        style="@style/Widget.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send"
-        android:textAllCaps="false"
-        app:layout_constraintBottom_toBottomOf="@id/editText"
+        android:layout_marginTop="@dimen/spacing4"
+        android:backgroundTint="@color/colorBlack"
+        android:onClick="disconnectFromVehicle"
+        android:text="@string/disconnectFromVehicle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editText" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnStartEngine" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

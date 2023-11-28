@@ -34,12 +34,13 @@ public class BlueStaticValue {
         return "";
     }
     /**
-     * 控制车辆 instruction控制命令1：开启2：熄火3：设防4：撤防5：尾箱变化6：寻车 time只有0到7档，每档5分钟，0档位5分钟
+     * Control the vehicle instruction control command 1: On 2: Turn off the engine 3: Fortify 4: Disarm 5: Tail box change 6: Find the car The time only has 0 to 7 gears, each gear is 5 minutes, 0 gear is 5 minutes
      */
     public static String getControlCmdByID(int controlCmd) {
         switch (controlCmd) {
-            case 1: return controlCmdArr[0];
-            case 2: return controlCmdArr[0];
+            case 1:
+            case 2:
+                return controlCmdArr[0];
             case 3: return controlCmdArr[1];
             case 4: return controlCmdArr[2];
             case 5: return controlCmdArr[3];

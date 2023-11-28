@@ -12,25 +12,23 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.polidea.rxandroidble2.scan.ScanResult
 import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import qi.ble.communication.adapter.ScanResultsAdapter
 import qi.ble.communication.databinding.ActivityMainBinding
-import qi.ble.communication.keycore.BlueAdapter
-import qi.ble.communication.keycore.BlueAdapter.TAG
+import qi.ble.communication.keycore.Kulala
+import qi.ble.communication.keycore.KulalaState
 import qi.ble.communication.permission.PermissionsHelper
 
 
 class MainActivity : AppCompatActivity() {
-    var bluetoothAdapter: BluetoothAdapter? = null
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private val TAG = "Kulala"
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun requestBluetoothPermission() {
@@ -76,6 +74,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = ActivityMainBinding.inflate(layoutInflater)
@@ -83,30 +85,17 @@ class MainActivity : AppCompatActivity() {
 
         val bluetoothManager = getSystemService(BluetoothManager::class.java)
         bluetoothAdapter = bluetoothManager.adapter
-
-        binding.btnScan.setOnClickListener {
-            BlueAdapter.scan(object : BlueAdapter.KcResult<ScanResult> {
-                override fun onSuccess(result: ScanResult) {
-                    resultsAdapter.addScanResult(result)
-                }
-
-                override fun onError(error: Throwable) {
-                    Log.d(TAG, error.toString())
-                }
-            })
-        }
-        binding.btnConnect.setOnClickListener { BlueAdapter.connect() }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestBluetoothPermission()
         }
 
-        configureResultList(binding)
-        BlueAdapter.init(this)
+        Kulala.instance.init(this)
     }
 
     fun enableBluetooth(view: View) {
         if (bluetoothAdapter == null) {
             Log.d(TAG, "enableDisableBT: Does not have BT capabilities.")
+            showToast("Does not have BT capabilities")
         }
         if (bluetoothAdapter?.isEnabled == false && ContextCompat.checkSelfPermission(
                 this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT
@@ -117,27 +106,95 @@ class MainActivity : AppCompatActivity() {
             startActivity(btIntent)
             val intent = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             registerReceiver(broadcastReceiver, intent)
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                requestBluetoothPermission()
+            }
         }
+
         if (bluetoothAdapter?.isEnabled == true) {
             val intent = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             registerReceiver(broadcastReceiver, intent)
+            showToast("Bluetooth already enabled!")
         }
     }
 
-    private fun configureResultList(binding: ActivityMainBinding) {
-        with(binding.scanResults) {
-            setHasFixedSize(true)
-            itemAnimator = null
-            adapter = resultsAdapter
-            addItemDecoration(
-                DividerItemDecoration(
-                    context,
-                    LinearLayoutManager.VERTICAL
-                )
-            )
-        }
+    fun connectToVehicle(view: View) {
+        Kulala.instance.connectToVehicle(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.vehicle_connected))
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
     }
 
-    private val resultsAdapter = ScanResultsAdapter()
+    fun lockDoors(view: View) {
+        Kulala.instance.lockDoors(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.doors_locked))
+            }
 
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
+    }
+
+    fun unlockDoors(view: View) {
+        Kulala.instance.unlockDoors(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.doors_unlocked))
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
+    }
+
+    fun startEngine(view: View) {
+        Kulala.instance.startEngine(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.engine_started))
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
+    }
+
+
+    fun stopEngine(view: View) {
+        Kulala.instance.stopEngine(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.engine_stopped))
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
+    }
+
+    fun disconnectFromVehicle(view: View) {
+        Kulala.instance.disconnectFromVehicle(object : Kulala.BlueResult<KulalaState> {
+            override fun onSuccess(result: KulalaState) {
+                showToast(getString(R.string.vehicle_disconnected))
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                showToast(error.toString())
+            }
+        })
+    }
 }

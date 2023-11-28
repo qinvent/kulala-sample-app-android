@@ -1,6 +1,34 @@
 <resources>
-    <string name="app_name">BLE Communication</string>
+    <string name="app_name">KC Tech Sample App</string>
     <string name="allow_in_settings">You need to allow necessary permissions in Settings manually in order to continue</string>
     <string name="cancel">Cancel</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
+
+
+    <string name="enableBluetooth">Enable Bluetooth</string>
+    <string name="connectToVehicle">Connect to Vehicle</string>
+    <string name="connectingVehicle">Connecting&#8230;</string>
+    <string name="unlockingDoors">Unlocking&#8230;</string>
+    <string name="lockingDoors">Locking&#8230;</string>
+    <string name="startingEngine">Starting&#8230;</string>
+    <string name="stoppingEngine">Disabling&#8230;</string>
+    <string name="disconnectingVehicle">Disconnecting&#8230;</string>
+    <string name="unlockDoors">Unlock Doors</string>
+    <string name="lockDoors">Lock Doors</string>
+    <string name="startEngine">Start Engine</string>
+    <string name="stopEngine">Stop Engine</string>
+    <string name="disconnectFromVehicle">Disconnect From Vehicle</string>
+
+    <string name="vehicle_not_connected">Currently not connected to a vehicle.</string>
+    <string name="vehicle_connected">Vehicle connected successfully!</string>
+    <string name="doors_unlocked">Doors unlocked successfully!</string>
+    <string name="doors_locked">Doors locked successfully!</string>
+    <string name="engine_started">Engine started successfully!</string>
+    <string name="engine_stopped">Engine stopped successfully!</string>
+    <string name="vehicle_disconnected">Vehicle disconnected successfully!</string>
+
+    <string name="permission_required">Permission Required</string>
+    <string name="error_ble_location_permission_required">Location permission is required for scanning Bluetooth devices</string>
+    <string name="error_ble_location_permission_required_settings">Location permission is required for scanning Bluetooth devices. Please grant the permission in Settings.</string>
+    <string name="turn_on_location_service">Location service needs to be turned on</string>
 </resources>

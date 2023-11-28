@@ -6,6 +6,9 @@ import android.bluetooth.BluetoothGattService
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
+import com.polidea.rxandroidble2.LogConstants
+import com.polidea.rxandroidble2.LogOptions
+import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.RxBleClient.State
 import com.polidea.rxandroidble2.RxBleConnection
 import com.polidea.rxandroidble2.RxBleDevice
@@ -20,28 +23,28 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.timerTask
 import qi.ble.communication.BuildConfig
-import qi.ble.communication.SampleApp
 import qi.ble.communication.keycore.ConvertHexByte.bytesToHexString
 import qi.ble.communication.keycore.ConvertHexByte.hexStringToBytes
+import qi.ble.communication.keycore.Kulala.BlueResult
 
 
-@SuppressLint("StaticFieldLeak")
-object BlueAdapter {
+class BlueAdapter(private val context: Context) {
 
-    const val TAG = "BLE Device"
+    private val TAG = "BLE Device"
 
     private val UUID_WRITE_SERVICE = ParcelUuid.fromString("00001000-0000-1000-8000-00805f9b34fb")
     private val UUID_WRITE_CHARACTERISTIC = UUID.fromString("00001001-0000-1000-8000-00805f9b34fb")
     private val UUID_NOTIFY = UUID.fromString("00001002-0000-1000-8000-00805f9b34fb")
     private val UUID_NOTIFY_DES = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
-    private val rxBleClient = SampleApp.rxBleClient
+    private var rxBleClient: RxBleClient? = null
     private var rxBleConnection: RxBleConnection? = null
     private var rxBleDevice: RxBleDevice? = null
 
     private var rxBleState: State? = null
     private var scanDisposable: Disposable? = null
-    private var connectDisposable: Disposable? = null
+    private var connectionDisposable: Disposable? = null
+    private var connectionStateDisposable: Disposable? = null
     private var discoveryDisposable: Disposable? = null
 
     private var bleConnectionDisposable: Disposable? = null
@@ -49,16 +52,52 @@ object BlueAdapter {
 
     private val carSign = ""
 
-    private var context: Context? = null
 
     private val isScanning: Boolean
         get() = scanDisposable != null
 
-    fun init(context: Context) {
-        this.context = context
+
+    var vehicleState: KulalaState = KulalaState.UNKNOWN
+        private set
+
+    init {
+
+        rxBleClient = RxBleClient.create(context)
+        RxBleClient.updateLogOptions(
+            LogOptions.Builder()
+                .setLogLevel(LogConstants.INFO)
+                .setMacAddressLogSetting(LogConstants.MAC_ADDRESS_FULL)
+                .setUuidsLogSetting(LogConstants.UUIDS_FULL)
+                .setShouldLogAttributeValues(true)
+                .build()
+        )
     }
 
-    fun scan(result: KcResult<ScanResult>) {
+    private fun observeConnectionState() {
+        connectionStateDisposable = rxBleDevice?.observeConnectionStateChanges()
+            ?.observeOn(AndroidSchedulers.mainThread())
+            ?.subscribe({ state ->
+                state?.let {
+                    Log.d(TAG, "Connection state change $it")
+                    when (it) {
+                        RxBleConnection.RxBleConnectionState.CONNECTING -> {
+                        }
+                        RxBleConnection.RxBleConnectionState.CONNECTED -> {
+                            vehicleState = KulalaState.CONNECTED
+                        }
+                        RxBleConnection.RxBleConnectionState.DISCONNECTED -> {
+                            vehicleState = KulalaState.DISCONNECTED
+                        }
+                        RxBleConnection.RxBleConnectionState.DISCONNECTING -> {
+                        }
+                    }
+                }
+            }, {
+                Log.d(TAG, "Connection state change error ${it.toString()}")
+            })
+    }
+
+    private fun scan(result: BlueResult<ScanResult>) {
         Log.d(TAG, "scanning")
         val scanSetting = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // change if needed
@@ -70,23 +109,24 @@ object BlueAdapter {
             // .setDeviceAddress("00:07:80:C5:BB:47") // KC1 device address "00:07:80:C5:BB:47"
             .build()
 
-        scanDisposable = rxBleClient.observeStateChanges()
-            .startWith(rxBleClient.state)
-            .flatMap {
+        scanDisposable = rxBleClient?.observeStateChanges()
+            ?.startWith(rxBleClient?.state)
+            ?.flatMap {
                 rxBleState = it
                 if (rxBleState == State.READY) {
-                    rxBleClient.scanBleDevices(scanSetting, scanFilter)
-                        .timeout(10, TimeUnit.SECONDS)
+                    rxBleClient?.scanBleDevices(scanSetting, scanFilter)
+                        ?.timeout(30, TimeUnit.SECONDS)
                 } else {
                     io.reactivex.Observable.empty()
                 }
 
-            }.observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
+            }?.observeOn(AndroidSchedulers.mainThread())
+            ?.subscribe(
                 { scanResult: ScanResult ->
                     if (rxBleState == State.READY) {
-                        result.onSuccess(scanResult)
                         rxBleDevice = scanResult.bleDevice
+                        observeConnectionState()
+                        result.onSuccess(scanResult)
                     } else {
                         result.onError(Throwable(rxBleState?.name))
                         Log.d(TAG, rxBleState?.name.toString())
@@ -105,21 +145,6 @@ object BlueAdapter {
     private fun onScanFailure(throwable: Throwable) {
         if (throwable is BleScanException) Log.e(TAG, "Scan failed", throwable)
         else Log.w(TAG, "Scan failed", throwable)
-    }
-
-    fun connect() {
-        connectDisposable = rxBleDevice?.establishConnection(false)
-            ?.flatMapSingle {
-                Log.d(TAG, "BLE connection established!")
-                it.discoverServices()
-            }?.subscribe({
-                Log.d(TAG, "BLE Device Service discovered!")
-                onServiceDiscovered(it)
-                connectDisposable?.dispose()
-            }, {
-                connectDisposable?.dispose()
-                Log.e(TAG, "BLE connection failed: $it")
-            })
     }
 
     private fun onServiceDiscovered(rxBleDeviceServices: RxBleDeviceServices) {
@@ -156,7 +181,7 @@ object BlueAdapter {
         writeCharacteristic = bluetoothGattService.getCharacteristic(UUID_WRITE_CHARACTERISTIC)
         if (writeCharacteristic != null) {
             Log.e(TAG, "Write channel selection:" + writeCharacteristic?.uuid)
-            rxBleDevice?.name?.let { onDiscoverCharacteristic(carSign, it)  }
+            rxBleDevice?.name?.let { onDiscoverCharacteristic(carSign, it) }
 
         }
     }
@@ -205,22 +230,22 @@ object BlueAdapter {
     }
 
     @SuppressLint("NewApi")
-    fun sendMessage(message: String) {
+    private fun sendMessage(message: String, result: BlueResult<KulalaState>? = null) {
         Log.i("Host Bluetooth", "Send Message")
         bleConnectionDisposable =
             writeCharacteristic?.let {
                 rxBleConnection?.writeCharacteristic(it, ConvertHexByte.hexStringToBytes(message))
-                    ?.doFinally { bleConnectionDisposable?.dispose() }
                     ?.subscribe({ characteristicValue ->
                         Log.d(TAG, "write characteristic $characteristicValue ")
-                        onMessageSent(characteristicValue)
+                        onMessageSent(characteristicValue, result)
                     }) { throwable ->
                         Log.d(TAG, "write characteristic $throwable")
+                        result?.onError(throwable)
                     }
             }
     }
 
-    fun sendMessage(message: ByteArray) {
+    private fun sendMessage(message: ByteArray, result: BlueResult<KulalaState>? = null) {
         Log.i("Host Bluetooth", "Send Message")
         bleConnectionDisposable =
             writeCharacteristic?.let {
@@ -228,15 +253,16 @@ object BlueAdapter {
                     ?.doFinally { bleConnectionDisposable?.dispose() }
                     ?.subscribe({ characteristicValue ->
                         Log.d(TAG, "write characteristic $characteristicValue ")
-                        onMessageSent(characteristicValue)
+                        onMessageSent(characteristicValue, result)
                     }) { throwable ->
                         Log.d(TAG, "write characteristic $throwable")
+                        result?.onError(throwable)
                     }
             }
     }
 
 
-    private fun onMessageSent(bytes: ByteArray?) {
+    private fun onMessageSent(bytes: ByteArray?, result: BlueResult<KulalaState>? = null) {
         if (BuildConfig.DEBUG) Log.e("The delivery of the mod was successful", "123 ")
         if (bytes == null) return
         val byteStr = bytesToHexString(bytes) ?: return
@@ -254,10 +280,10 @@ object BlueAdapter {
             Timer().schedule(timerTask {
                 if (BuildConfig.DEBUG) Log.e(
                     "bluestate",
-                    "onMessageSended Vibrate indicates that the connection is successful!"
+                    "onMessage Sent Vibrate indicates that the connection is successful!"
                 )
                 // val dataCar: DataCarBlue = BlueLinkControl.getInstance().getDataCar()
-                val vibratorOpen  = true
+                val vibratorOpen = true
                 if (BuildConfig.DEBUG) Log.d(
                     "------------",
                     "datacar vibratorOpen $vibratorOpen"
@@ -268,6 +294,8 @@ object BlueAdapter {
                         "Vibrate indicates that the connection is successful"
                     )
                     // showVibrator()
+                    vehicleState = KulalaState.CONNECTED
+                    result?.onSuccess(KulalaState.CONNECTED)
                 }
             }, 500)
 
@@ -275,55 +303,69 @@ object BlueAdapter {
                 "55"
             )[0] && bytes[3] == hexStringToBytes("0A")[0] && bytes[4] == hexStringToBytes("F4")[0]
         ) {
+            result?.onSuccess(KulalaState.UNKNOWN)
         } else {
-            if (byteStr == bytesToHexString(
+            when (byteStr) {
+                bytesToHexString(
                     hexStringToBytes(
                         BlueStaticValue.getControlCmdByID(1)
                     )
-                )
-            ) {
-                Log.d(
-                    "blueSound",
-                    "bytes:" + byteStr + "  " + BlueStaticValue.getControlCmdByID(1)
-                )
-                if (BuildConfig.DEBUG) Log.e("SoundPlay", "ServiceA play_start")
-                // SoundPlay.getInstance().play_start(this@KulalaServiceA)
-            } else if (byteStr == bytesToHexString(
+                ) -> {
+                    Log.d(
+                        "blueSound",
+                        "bytes:" + byteStr + "  " + BlueStaticValue.getControlCmdByID(1)
+                    )
+                    if (BuildConfig.DEBUG) Log.e("SoundPlay", "ServiceA play_start")
+                    // SoundPlay.getInstance().play_start(this@KulalaServiceA)
+                    vehicleState = KulalaState.ENGINE_STARTED
+                    result?.onSuccess(KulalaState.ENGINE_STARTED)
+                }
+                bytesToHexString(
                     hexStringToBytes(
                         BlueStaticValue.getControlCmdByID(
                             5
                         )
                     )
-                )
-            ) {
-                // SoundPlay.getInstance().play_backpag(this@KulalaServiceA)
-            } else if (byteStr == s6s) {
-                if (BuildConfig.DEBUG) Log.e(
-                    "------------",
-                    "The sound of the wave looking for the car"
-                )
-                // SoundPlay.getInstance().play_findcar(this@KulalaServiceA)
-            } else if (byteStr == bytesToHexString(
+                ) -> {
+                    // SoundPlay.getInstance().play_backpag(this@KulalaServiceA)
+                    vehicleState = KulalaState.TAIL_GATE_UNLOCKED
+                    result?.onSuccess(KulalaState.TAIL_GATE_UNLOCKED)
+                }
+                s6s -> {
+                    if (BuildConfig.DEBUG) Log.e(
+                        "------------",
+                        "The sound of the wave looking for the car"
+                    )
+                    vehicleState = KulalaState.VEHICLE_FOUND
+                    result?.onSuccess(KulalaState.VEHICLE_FOUND)
+                    // SoundPlay.getInstance().play_findcar(this@KulalaServiceA)
+                }
+                bytesToHexString(
                     hexStringToBytes(
                         BlueStaticValue.getControlCmdByID(
                             3
                         )
                     )
-                ) || byteStr == bytesToHexString(
+                ) -> {
+                    vehicleState = KulalaState.LOCKED
+                    result?.onSuccess(KulalaState.LOCKED)
+                    // if (System.currentTimeMillis() - OShakeBlueNoScreenOnOrOff.controlSuccessTime < 2000L) {
+                    //     showVibrator()
+                    //     SoundPlay.getInstance().play_lock(this@KulalaServiceA)
+                    // } else {
+                    //     SoundPlay.getInstance().play_lock(this@KulalaServiceA)
+                    // }
+                }
+                bytesToHexString(
                     hexStringToBytes(
                         BlueStaticValue.getControlCmdByID(
                             4
                         )
                     )
-                )
-            ) {
-
-                // if (System.currentTimeMillis() - OShakeBlueNoScreenOnOrOff.controlSuccessTime < 2000L) {
-                //     showVibrator()
-                //     SoundPlay.getInstance().play_lock(this@KulalaServiceA)
-                // } else {
-                //     SoundPlay.getInstance().play_lock(this@KulalaServiceA)
-                // }
+                ) -> {
+                    vehicleState = KulalaState.UNLOCKED
+                    result?.onSuccess(KulalaState.UNLOCKED)
+                }
             }
         }
     }
@@ -375,17 +417,17 @@ object BlueAdapter {
         }
         //If you have enough data, read it in first data
         data.data = ByteArray(data.length)
-       val newMergeByte = ByteHelper.bytesMege(megebyte)
+        val newMergeByte = ByteHelper.bytesMege(megebyte)
         System.arraycopy(newMergeByte, 2, data.data, 0, data.length)
         //4.check
         data.check = megebyte[data.length + 2].toInt()
         if (data.matchCheck()) {
-                Log.d(
-                    TAG,
-                    "data。data" + Arrays.toString(data.data)
-                        .toString() + "data.type" + data.dataType
-                )
-               onDataReceived(data)
+            Log.d(
+                TAG,
+                "data。data" + Arrays.toString(data.data)
+                    .toString() + "data.type" + data.dataType
+            )
+            onDataReceived(data)
         }
         val uncheck = ConvertHexByte.bytesCut(megebyte, data.length + 3) //Cut off the duplicated
         findNext(uncheck)
@@ -405,7 +447,7 @@ object BlueAdapter {
                     "After the data to be decrypted 16 bit" + Arrays.toString(decodeByte)
                 )
                 // val dataCar: DataCarBlue = BlueLinkControl.getInstance().getDataCar()
-                val deviceName = rxBleDevice?.name?:""
+                val deviceName = rxBleDevice?.name ?: ""
                 if (deviceName.isNotEmpty() && (deviceName.startsWith(
                         "NFC"
                     ) || deviceName.startsWith("AKL") || deviceName.startsWith("MIN"))
@@ -492,19 +534,64 @@ object BlueAdapter {
         }
     }
 
-    fun getDataCar(): DataCarBlue {
-        if (BuildConfig.DEBUG) Log.e(
-            "bluestate",
-            "BlueAdapter.current_blue_state"
-        )
-        return DataCarBlue.loadLocal(context)
+    fun connectToVehicle(connectResult: BlueResult<KulalaState>) {
+        scan(object : BlueResult<ScanResult> {
+            override fun onSuccess(result: ScanResult) {
+                connectionDisposable = rxBleDevice?.establishConnection(false)
+                    ?.flatMapSingle {
+                        vehicleState = KulalaState.CONNECTED
+                        connectResult.onSuccess(KulalaState.CONNECTED)
+                        Log.d(TAG, "BLE connection established!")
+                        it.discoverServices()
+                    }?.subscribe({
+                        Log.d(TAG, "BLE Device Service discovered!")
+                        onServiceDiscovered(it)
+                    }, {
+                        Log.e(TAG, "BLE connection failed: $it")
+                        connectResult.onError(it)
+                    })
+            }
+
+            override fun onError(error: Throwable) {
+                Log.d(TAG, error.toString())
+                connectResult.onError(error)
+            }
+        })
     }
 
-    /**
-     * Wrapper for slick result
-     */
-    interface KcResult<T> {
-        fun onSuccess(result: T)
-        fun onError(error: Throwable)
+    fun lockDoors(result: BlueResult<KulalaState>) {
+        sendMessage(
+            BlueStaticValue.getControlCmdByID(1),
+            result
+        ) // "0x82 02 40 00 3B" to lock the doors
+    }
+
+    fun unlockDoors(result: BlueResult<KulalaState>) {
+        sendMessage(
+            BlueStaticValue.getControlCmdByID(2),
+            result
+        ) // "0x82 02 08 00 73" to unlock the doors
+    }
+
+    fun startEngine(result: BlueResult<KulalaState>) {
+        sendMessage(
+            BlueStaticValue.getControlCmdByID(0),
+            result
+        ) // "0x82 02 00 10 6B" to unlock the doors
+    }
+
+    fun stopEngine(result: BlueResult<KulalaState>) {
+        sendMessage(
+            BlueStaticValue.getControlCmdByID(0),
+            result
+        ) // "0x82 02 00 10 6B" to unlock the doors
+    }
+
+    fun disconnectFromVehicle(result: BlueResult<KulalaState>) {
+        if (connectionDisposable?.isDisposed == false) {
+            connectionDisposable?.dispose()
+        }
+        connectionDisposable = null
+        result.onSuccess(KulalaState.DISCONNECTED)
     }
 }
