@@ -1,9 +1,9 @@
-package qi.ble.communication.permission
+package com.qi.kulala.sample.permission
 
 import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import com.permissionx.guolindev.PermissionX
-import qi.ble.communication.R
+import com.qi.kulala.sample.R
 
 /**
  * A helper class to handle runtime permissions

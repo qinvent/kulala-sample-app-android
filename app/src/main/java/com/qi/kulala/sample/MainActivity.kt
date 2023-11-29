@@ -1,4 +1,4 @@
-package qi.ble.communication
+package com.qi.kulala.sample
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -18,13 +18,13 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.qi.kulala.sample.databinding.ActivityMainBinding
+import com.qi.kulala.sdk.Kulala
+import com.qi.kulala.sdk.constants.KulalaState
 import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import qi.ble.communication.databinding.ActivityMainBinding
-import qi.ble.communication.keycore.Kulala
-import qi.ble.communication.keycore.KulalaState
-import qi.ble.communication.permission.PermissionsHelper
+import com.qi.kulala.sample.permission.PermissionsHelper
 
 
 class MainActivity : AppCompatActivity() {

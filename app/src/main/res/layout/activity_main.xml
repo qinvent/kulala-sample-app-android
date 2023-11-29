@@ -9,7 +9,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="qi.ble.communication.MainActivity">
+    tools:context="qi.ble.communication.com.qi.kulala.MainActivity">
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnEnableBluetooth"

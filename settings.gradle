@@ -1,1 +1,2 @@
-include ':app'
+include ':app', ':kulala-sdk-android'
+project(':kulala-sdk-android').projectDir = new File(rootDir, '../kulala-sdk-android/')

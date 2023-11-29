@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">KC Tech Sample App</string>
+    <string name="app_name">Kulala Sample App</string>
     <string name="allow_in_settings">You need to allow necessary permissions in Settings manually in order to continue</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
