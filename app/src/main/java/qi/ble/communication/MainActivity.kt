@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -27,11 +28,12 @@ import qi.ble.communication.permission.PermissionsHelper
 
 
 class MainActivity : AppCompatActivity() {
+    private var binding: ActivityMainBinding? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private val TAG = "Kulala"
 
     @RequiresApi(Build.VERSION_CODES.S)
-    private fun requestBluetoothPermission() {
+    private fun requestPermissions() {
         Log.d("isRequesting=", "${PermissionsHelper.isRequesting}")
         if (PermissionsHelper.isRequesting) return
         PermissionsHelper.requestPermissions(
@@ -47,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             if (!result.allGranted && result.isForwardedToSettings) {
                 lifecycleScope.launch {
                     delay(200)
-                    requestBluetoothPermission()
+                    requestPermissions()
                 }
             }
         }
@@ -75,21 +77,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        return locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) ?: false
+    }
+
+    private fun setVehicleState(state: KulalaState) {
+        val currentState = getString(
+            R.string.vehicleState, when (state) {
+                KulalaState.CONNECTED -> getString(R.string.connected)
+                KulalaState.UNLOCKED -> getString(R.string.doorsUnlocked)
+                KulalaState.LOCKED -> getString(R.string.doorsLocked)
+                KulalaState.ENGINE_STARTED -> getString(R.string.engineStarted)
+                KulalaState.ENGINE_STOPPED -> getString(R.string.engineStopped)
+                KulalaState.DISCONNECTED -> getString(R.string.disconnected)
+                else -> "Unknown"
+            }
+        )
+        runOnUiThread {
+            binding?.vehicleState?.text = currentState
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding?.root)
 
         val bluetoothManager = getSystemService(BluetoothManager::class.java)
         bluetoothAdapter = bluetoothManager.adapter
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestBluetoothPermission()
+            requestPermissions()
         }
 
         Kulala.instance.init(this)
+        setVehicleState(KulalaState.UNKNOWN)
     }
 
     fun enableBluetooth(view: View) {
@@ -108,92 +135,120 @@ class MainActivity : AppCompatActivity() {
             registerReceiver(broadcastReceiver, intent)
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                requestBluetoothPermission()
+                requestPermissions()
             }
         }
 
         if (bluetoothAdapter?.isEnabled == true) {
             val intent = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             registerReceiver(broadcastReceiver, intent)
-            showToast("Bluetooth already enabled!")
+            showToast(getString(R.string.bluetooth_enabled))
         }
     }
 
     fun connectToVehicle(view: View) {
+        if (!isLocationEnabled()) {
+            showToast(getString(R.string.turn_on_location_service))
+            return
+        }
+        binding?.btnConnect?.text = getString(R.string.connectingVehicle)
         Kulala.instance.connectToVehicle(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.vehicle_connected))
+                setVehicleState(result)
+                binding?.btnConnect?.text = getString(R.string.connectToVehicle)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnConnect?.text = getString(R.string.connectToVehicle)
             }
         })
     }
 
     fun lockDoors(view: View) {
+        binding?.btnLockDoors?.text = getString(R.string.lockingDoors)
         Kulala.instance.lockDoors(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.doors_locked))
+                setVehicleState(result)
+                binding?.btnLockDoors?.text = getString(R.string.lockDoors)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnLockDoors?.text = getString(R.string.lockDoors)
             }
         })
     }
 
     fun unlockDoors(view: View) {
+        binding?.btnUnlockDoors?.text = getString(R.string.unlockingDoors)
         Kulala.instance.unlockDoors(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.doors_unlocked))
+                setVehicleState(result)
+                binding?.btnUnlockDoors?.text = getString(R.string.unlockDoors)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnUnlockDoors?.text = getString(R.string.unlockDoors)
             }
         })
     }
 
     fun startEngine(view: View) {
+        binding?.btnStartEngine?.text = getString(R.string.startingEngine)
         Kulala.instance.startEngine(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.engine_started))
+                setVehicleState(result)
+                binding?.btnStartEngine?.text = getString(R.string.startEngine)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnStartEngine?.text = getString(R.string.startEngine)
             }
         })
     }
 
 
     fun stopEngine(view: View) {
+        binding?.btnStopEngine?.text = getString(R.string.stoppingEngine)
         Kulala.instance.stopEngine(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.engine_stopped))
+                setVehicleState(result)
+                binding?.btnStopEngine?.text = getString(R.string.stopEngine)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnStopEngine?.text = getString(R.string.stopEngine)
             }
         })
     }
 
     fun disconnectFromVehicle(view: View) {
+        binding?.btnDisconnect?.text = getString(R.string.disconnectingVehicle)
         Kulala.instance.disconnectFromVehicle(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.vehicle_disconnected))
+                setVehicleState(result)
+                binding?.btnDisconnect?.text = getString(R.string.disconnectFromVehicle)
             }
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
                 showToast(error.toString())
+                binding?.btnDisconnect?.text = getString(R.string.disconnectFromVehicle)
             }
         })
     }

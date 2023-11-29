@@ -105,8 +105,8 @@ class BlueAdapter(private val context: Context) {
             .build()
 
         val scanFilter = ScanFilter.Builder()
-            .setDeviceAddress("F0:F8:F2:E2:3E:06")// Kulala device address "F0:F8:F2:E2:3E:06"
-            // .setDeviceAddress("00:07:80:C5:BB:47") // KC1 device address "00:07:80:C5:BB:47"
+            // .setDeviceAddress("F0:F8:F2:E2:3E:06")// Kulala device address "F0:F8:F2:E2:3E:06"
+            .setDeviceAddress("00:07:80:C5:BB:47") // KC1 device address "00:07:80:C5:BB:47"
             .build()
 
         scanDisposable = rxBleClient?.observeStateChanges()

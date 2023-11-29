@@ -7,6 +7,7 @@
 
     <string name="enableBluetooth">Enable Bluetooth</string>
     <string name="connectToVehicle">Connect to Vehicle</string>
+    <string name="connected">Connected</string>
     <string name="connectingVehicle">Connecting&#8230;</string>
     <string name="unlockingDoors">Unlocking&#8230;</string>
     <string name="lockingDoors">Locking&#8230;</string>
@@ -14,11 +15,17 @@
     <string name="stoppingEngine">Disabling&#8230;</string>
     <string name="disconnectingVehicle">Disconnecting&#8230;</string>
     <string name="unlockDoors">Unlock Doors</string>
+    <string name="doorsUnlocked">Doors Unlocked</string>
+    <string name="doorsLocked">Doors Locked</string>
     <string name="lockDoors">Lock Doors</string>
     <string name="startEngine">Start Engine</string>
+    <string name="engineStarted">Engine Started</string>
+    <string name="engineStopped">Engine Stopped</string>
     <string name="stopEngine">Stop Engine</string>
     <string name="disconnectFromVehicle">Disconnect From Vehicle</string>
+    <string name="disconnected">Disconnected</string>
 
+    <string name="vehicleState">Current vehicle state: %s</string>
     <string name="vehicle_not_connected">Currently not connected to a vehicle.</string>
     <string name="vehicle_connected">Vehicle connected successfully!</string>
     <string name="doors_unlocked">Doors unlocked successfully!</string>
@@ -27,8 +34,6 @@
     <string name="engine_stopped">Engine stopped successfully!</string>
     <string name="vehicle_disconnected">Vehicle disconnected successfully!</string>
 
-    <string name="permission_required">Permission Required</string>
-    <string name="error_ble_location_permission_required">Location permission is required for scanning Bluetooth devices</string>
-    <string name="error_ble_location_permission_required_settings">Location permission is required for scanning Bluetooth devices. Please grant the permission in Settings.</string>
     <string name="turn_on_location_service">Location service needs to be turned on</string>
+    <string name="bluetooth_enabled">Bluetooth already enabled!</string>
 </resources>

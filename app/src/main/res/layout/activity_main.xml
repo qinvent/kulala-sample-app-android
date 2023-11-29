@@ -107,4 +107,17 @@
         app:layout_constraintTop_toBottomOf="@id/btnStartEngine" />
 
 
+    <TextView
+        android:id="@+id/vehicleState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing7"
+        android:text="@string/vehicleState"
+        android:textColor="@color/colorBlue"
+        android:textStyle="bold|italic"
+        android:textSize="@dimen/text_large"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnDisconnect" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
