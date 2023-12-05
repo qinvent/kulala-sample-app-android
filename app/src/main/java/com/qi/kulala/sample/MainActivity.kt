@@ -19,12 +19,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.qi.kulala.sample.databinding.ActivityMainBinding
+import com.qi.kulala.sample.permission.PermissionsHelper
 import com.qi.kulala.sdk.Kulala
-import com.qi.kulala.sdk.constants.KulalaState
+import com.qi.kulala.sdk.enumerator.KulalaState
 import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.qi.kulala.sample.permission.PermissionsHelper
 
 
 class MainActivity : AppCompatActivity() {
@@ -77,9 +77,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showToast(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-        }
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun isLocationEnabled(): Boolean {
@@ -99,9 +97,7 @@ class MainActivity : AppCompatActivity() {
                 else -> "Unknown"
             }
         )
-        runOnUiThread {
-            binding?.vehicleState?.text = currentState
-        }
+        binding?.vehicleState?.text = currentState
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
