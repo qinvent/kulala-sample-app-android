@@ -36,4 +36,5 @@
 
     <string name="turn_on_location_service">Location service needs to be turned on</string>
     <string name="bluetooth_enabled">Bluetooth already enabled!</string>
+    <string name="enable_bluetooth">Bluetooth needs to be turned on</string>
 </resources>

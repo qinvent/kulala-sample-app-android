@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.qi.kulala.sample.databinding.ActivityMainBinding
 import com.qi.kulala.sample.permission.PermissionsHelper
 import com.qi.kulala.sdk.Kulala
+import com.qi.kulala.sdk.enumerator.Command
 import com.qi.kulala.sdk.enumerator.KulalaState
 import java.util.*
 import kotlinx.coroutines.delay
@@ -74,6 +75,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun showToast(throwable: Throwable) {
+        Toast.makeText(this, throwable.message ?: throwable.toString(), Toast.LENGTH_SHORT).show()
     }
 
     private fun showToast(message: String) {
@@ -143,12 +148,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun connectToVehicle(view: View) {
+        if (bluetoothAdapter?.isEnabled == false) {
+            showToast(getString(R.string.enable_bluetooth))
+            return
+        }
+
         if (!isLocationEnabled()) {
             showToast(getString(R.string.turn_on_location_service))
             return
         }
+
+        // Kulala device address "A4:34:F1:11:F8:8B"
+        // KC1 device address "00:07:80:C5:BB:47"
+        val macAddress = "A4:34:F1:11:F8:8B"
         binding?.btnConnect?.text = getString(R.string.connectingVehicle)
-        Kulala.instance.connectToVehicle(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.connectDevice(macAddress, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.vehicle_connected))
                 setVehicleState(result)
@@ -157,7 +171,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnConnect?.text = getString(R.string.connectToVehicle)
             }
         })
@@ -165,7 +179,7 @@ class MainActivity : AppCompatActivity() {
 
     fun lockDoors(view: View) {
         binding?.btnLockDoors?.text = getString(R.string.lockingDoors)
-        Kulala.instance.lockDoors(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.sendCommand(Command.LOCK, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.doors_locked))
                 setVehicleState(result)
@@ -174,7 +188,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnLockDoors?.text = getString(R.string.lockDoors)
             }
         })
@@ -182,7 +196,7 @@ class MainActivity : AppCompatActivity() {
 
     fun unlockDoors(view: View) {
         binding?.btnUnlockDoors?.text = getString(R.string.unlockingDoors)
-        Kulala.instance.unlockDoors(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.sendCommand(Command.UNLOCK, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.doors_unlocked))
                 setVehicleState(result)
@@ -191,7 +205,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnUnlockDoors?.text = getString(R.string.unlockDoors)
             }
         })
@@ -199,7 +213,7 @@ class MainActivity : AppCompatActivity() {
 
     fun startEngine(view: View) {
         binding?.btnStartEngine?.text = getString(R.string.startingEngine)
-        Kulala.instance.startEngine(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.sendCommand(Command.START_ENGINE, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.engine_started))
                 setVehicleState(result)
@@ -208,7 +222,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnStartEngine?.text = getString(R.string.startEngine)
             }
         })
@@ -217,7 +231,7 @@ class MainActivity : AppCompatActivity() {
 
     fun stopEngine(view: View) {
         binding?.btnStopEngine?.text = getString(R.string.stoppingEngine)
-        Kulala.instance.stopEngine(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.sendCommand(Command.STOP_ENGINE, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.engine_stopped))
                 setVehicleState(result)
@@ -226,7 +240,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnStopEngine?.text = getString(R.string.stopEngine)
             }
         })
@@ -234,7 +248,7 @@ class MainActivity : AppCompatActivity() {
 
     fun disconnectFromVehicle(view: View) {
         binding?.btnDisconnect?.text = getString(R.string.disconnectingVehicle)
-        Kulala.instance.disconnectFromVehicle(object : Kulala.BlueResult<KulalaState> {
+        Kulala.instance.disconnectDevice(object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
                 showToast(getString(R.string.vehicle_disconnected))
                 setVehicleState(result)
@@ -243,7 +257,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.d(TAG, error.toString())
-                showToast(error.toString())
+                showToast(error)
                 binding?.btnDisconnect?.text = getString(R.string.disconnectFromVehicle)
             }
         })
