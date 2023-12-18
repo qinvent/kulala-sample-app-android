@@ -18,6 +18,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.polidea.rxandroidble2.exceptions.BleDisconnectedException
 import com.qi.kulala.sample.databinding.ActivityMainBinding
 import com.qi.kulala.sample.permission.PermissionsHelper
 import com.qi.kulala.sdk.Kulala
@@ -78,6 +79,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showToast(throwable: Throwable) {
+        if (throwable is BleDisconnectedException) {
+            setVehicleState(KulalaState.DISCONNECTED)
+        }
         Toast.makeText(this, throwable.message ?: throwable.toString(), Toast.LENGTH_SHORT).show()
     }
 

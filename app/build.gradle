@@ -5,6 +5,21 @@ apply plugin: 'kotlin-kapt'
 android {
     compileSdkVersion 33
     buildToolsVersion "33.0.2"
+
+    Properties properties = new Properties()
+    if (rootProject.file("local.properties").exists()) {
+        properties.load(rootProject.file("local.properties").newDataInputStream())
+    }
+
+    signingConfigs {
+        defaultConfig {
+            storeFile file(properties['keyStoreFile'])
+            storePassword properties['keyStorePassword']
+            keyAlias properties['keyAlias']
+            keyPassword properties['keyAliasPassword']
+        }
+    }
+
     defaultConfig {
         applicationId "com.qi.kulala.sample"
         minSdkVersion 23
@@ -15,6 +30,13 @@ android {
     }
     buildTypes {
         release {
+            signingConfig signingConfigs.defaultConfig
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            signingConfig signingConfigs.defaultConfig
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
