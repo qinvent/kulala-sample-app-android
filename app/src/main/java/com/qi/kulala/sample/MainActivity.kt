@@ -164,11 +164,12 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        val macAddress = "00:07:80:C5:BB:47" // KC1 device address "00:07:80:C5:BB:47"
+        // val macAddress = "00:07:80:C5:BB:47" // KC1 device address "00:07:80:C5:BB:47"
         // val macAddress = "A4:34:F1:11:F8:8B" // India Kulala device address "A4:34:F1:11:F8:8B"
-        // val macAddress = "A4:34:F1:16:40:89" // Singapore Kulala device address "A4:34:F1:11:F8:8B"
+        val macAddress = "A4:34:F1:16:40:89" // Singapore Kulala device address "A4:34:F1:11:F8:8B"
         val carSign = "529234f1A88ebA46"
-        val dataCar = DataCarBlue(carSign = carSign, deviceAddress = macAddress)
+        val blueCarSign = "1694340aA7347A4d"
+        val dataCar = DataCarBlue(carSign = blueCarSign, deviceAddress = macAddress)
         binding?.btnConnect?.text = getString(R.string.connectingVehicle)
         Kulala.instance.connectDevice(dataCar, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
