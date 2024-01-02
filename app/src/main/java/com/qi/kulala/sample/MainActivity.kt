@@ -24,7 +24,7 @@ import com.qi.kulala.sample.permission.PermissionsHelper
 import com.qi.kulala.sdk.Kulala
 import com.qi.kulala.sdk.enumerator.Command
 import com.qi.kulala.sdk.enumerator.KulalaState
-import com.qi.kulala.sdk.model.DataCarBlue
+import com.qi.kulala.sdk.model.KulalaVehicle
 import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -165,11 +165,11 @@ class MainActivity : AppCompatActivity() {
 
 
         // val macAddress = "00:07:80:C5:BB:47" // KC1 device address "00:07:80:C5:BB:47"
-        // val macAddress = "A4:34:F1:11:F8:8B" // India Kulala device address "A4:34:F1:11:F8:8B"
-        val macAddress = "A4:34:F1:16:40:89" // Singapore Kulala device address "A4:34:F1:11:F8:8B"
+        val macAddress = "A4:34:F1:11:F8:8B" // India Kulala device address "A4:34:F1:11:F8:8B"
+        // val macAddress = "A4:34:F1:16:40:89" // Singapore Kulala device address "A4:34:F1:16:40:89"
         val carSign = "529234f1A88ebA46"
         val blueCarSign = "1694340aA7347A4d"
-        val dataCar = DataCarBlue(carSign = blueCarSign, deviceAddress = macAddress)
+        val dataCar = KulalaVehicle(bluetoothKey = blueCarSign, deviceAddress = macAddress)
         binding?.btnConnect?.text = getString(R.string.connectingVehicle)
         Kulala.instance.connectDevice(dataCar, object : Kulala.BlueResult<KulalaState> {
             override fun onSuccess(result: KulalaState) {
